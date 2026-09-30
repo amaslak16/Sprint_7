@@ -12,14 +12,16 @@ class TestCreateCourier:
         assert response.json() == {"ok": True}
 
     @allure.title("Нельзя создать курьера с уже занятым логином")
-    def test_cannot_create_duplicate_courier(self, courier_factory):
-        data, first_response = courier_factory()
-        assert first_response.status_code == 201
-
-        duplicate_response = courier_factory(data)[1]
+    def test_cannot_create_duplicate_courier(
+        self, api_client, registered_courier
+    ):
+        duplicate_response = api_client.create_courier(registered_courier)
 
         assert duplicate_response.status_code == 409
-        assert "message" in duplicate_response.json()
+        assert (
+            duplicate_response.json()["message"]
+            == "Этот логин уже используется. Попробуйте другой."
+        )
 
     @pytest.mark.parametrize(
         "missing_field", ["login", "password"], ids=["без-логина", "без-пароля"]
@@ -34,4 +36,7 @@ class TestCreateCourier:
         response = api_client.create_courier(payload)
 
         assert response.status_code == 400
-        assert "message" in response.json()
+        assert (
+            response.json()["message"]
+            == "Недостаточно данных для создания учетной записи"
+        )
